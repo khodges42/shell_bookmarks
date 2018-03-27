@@ -1,0 +1,66 @@
+#!/bin/bash
+bfile="/opt/bookmark/.bookmarks"
+OPTIND=1
+
+# If the dir is empty, we mean PWD
+
+    while getopts ":b:d:lajs" opt
+    do
+        case "${opt}"
+        in
+            b)B_ID="${OPTARG}";;
+            d)B_DIR="${OPTARG}";;
+            a)
+                ACTION="ADD";;
+            j)
+                ACTION="JUMP";;
+            s)
+                ACTION="SWAP";;
+            l)
+                ACTION="LIST";;
+        esac
+    done
+    
+ if [[ -z $B_ID ]]; then B_ID=9000; fi
+ if [[ -z $B_DIR ]]; then B_DIR=$(pwd); fi
+    
+run() {
+    case "${ACTION}"
+    in
+        ADD)
+            BOOKMARKS[$B_ID]=$B_DIR
+            save_bookmarks;;
+        JUMP)
+            cd ${BOOKMARKS[$B_ID]};;
+        SWAP)
+            TEMP_DIR=$(pwd)
+            cd ${BOOKMARKS[$B_ID]}
+            BOOKMARKS[$B_ID]=$TEMP_DIR
+            save_bookmarks;;
+        
+        LIST)
+            i=1
+            for k in "${(@k)BOOKMARKS}"; do
+                if [[ ! -z $k ]]; then; echo "[$i] $k"; fi
+                ((i++))         
+            done      
+    esac
+}
+
+
+save_bookmarks() {
+    declare -p BOOKMARKS > "${bfile}"
+}
+
+main() {
+    # Source or Create
+    if [ -f "${bfile}" ]; then
+        source "${bfile}"
+    else
+        touch "${bfile}"
+        declare -A BOOKMARKS
+    fi
+    run;
+}
+
+main
